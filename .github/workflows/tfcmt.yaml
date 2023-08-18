@@ -1,0 +1,55 @@
+name: tfcmt
+
+on:
+  pull_request:
+    paths:
+      - "examples/getting-started/*.tf"
+      - ".github/workflows/tfcmt.yaml"
+
+jobs:
+  terraform-plan:
+    permissions:
+      contents: read
+      pull-requests: write
+
+    continue-on-error: true
+    strategy:
+      matrix:
+        directory:
+          - examples/getting-started
+          - examples/getting-started2
+          - examples/getting-started3
+          - examples/getting-started4
+          - examples/getting-started5
+
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: "${{ matrix.directory }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.5"
+
+      - name: "install tfcmt ${TFCMT_VERSION}"
+        env:
+          TFCMT_VERSION: v4.4.4
+        run: |
+          wget "https://github.com/suzuki-shunsuke/tfcmt/releases/download/${TFCMT_VERSION}/tfcmt_linux_amd64.tar.gz" -O /tmp/tfcmt.tar.gz
+          tar xzf /tmp/tfcmt.tar.gz -C /tmp
+          mv /tmp/tfcmt /usr/local/bin
+          tfcmt --version
+
+      - name: "terraform init ${{ matrix.directory }}"
+        run: terraform init
+
+      - name: "terraform validate ${{ matrix.directory }}"
+        run: terraform validate -no-color
+
+      - name: "terraform plan ${{ matrix.directory }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: tfcmt plan --patch --skip-no-changes -- terraform plan -no-color -input=false
