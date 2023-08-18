@@ -55,4 +55,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # --skip-no-changes 未指定 -
-        run: tfcmt --var target:${{ matrix.directory }} plan --patch -- terraform plan -no-color -input=false
+        run: tfcmt --var target:${{ matrix.directory }} plan --patch --skip-no-changes -- terraform plan -no-color -input=false
